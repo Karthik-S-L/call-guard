@@ -44,12 +44,6 @@ def detect_profanity_using_regex():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-#     try:
-#         is_profane = detect_profanity_ml(request.text)
-#         return is_profane
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-
 @router.post("/detect/profanity/ml/files", response_model=dict)
 def detect_profanity_using_ml():
     try:
