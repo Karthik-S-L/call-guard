@@ -174,4 +174,9 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+#sample-folder
+yaml-sample-folder
+
+launch.json
+
 
