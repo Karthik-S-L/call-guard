@@ -177,6 +177,7 @@ cython_debug/
 #sample-folder
 yaml-sample-folder
 
+#launch config
 launch.json
 
 
