@@ -1,6 +1,6 @@
 import re
 
-# Simple list of profane words (extend as needed)
+# Simple list of profane words 
 PROFANITY_WORDS = {"toxic", "Stupid", "idiot","kill","dumb","shit"}
 
 # Compile regex pattern
