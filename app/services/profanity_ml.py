@@ -3,6 +3,7 @@ from app.models.profanity import ProfanityResponse
 import requests
 from dotenv import load_dotenv
 
+load_dotenv()
 # Load API Key from .env
 HF_API_KEY = os.getenv("HF_API_KEY")
 API_URL = "https://router.huggingface.co/hf-inference/models/unitary/toxic-bert"
