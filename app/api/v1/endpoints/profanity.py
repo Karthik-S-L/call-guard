@@ -1,34 +1,41 @@
-import io
-import json
 import os
-import zipfile
-from fastapi import APIRouter, HTTPException
-import yaml
+import json
+from fastapi import APIRouter, HTTPException, Depends
 from app.models.profanity import ProfanityRequest, ProfanityResponse
 from app.services.profanity_regex import detect_profanity_regex
 from app.services.profanity_ml import detect_profanity_ml
 from app.services.profanity_llm import detect_profanity_llm
 
 router = APIRouter()
-zip_path = "yaml-sample-folder/All_Conversations.zip"
+FOLDER_PATH = "yaml-sample-folder/All_Conversations/"
 
 @router.post("/detect/profanity/regex", response_model=dict)
 def detect_profanity_using_regex():
+    """
+    Detects profanity in conversation files using regex-based pattern matching.
+
+    Returns:
+    --------
+    dict:
+        {
+            "agent": [list of call IDs with agent profanity],
+            "customer": [list of call IDs with customer profanity]
+        }
+    """
     try:
-        folder_path = "yaml-sample-folder/All_Conversations/" 
-        if not os.path.exists(folder_path):
+        if not os.path.exists(FOLDER_PATH):
             raise HTTPException(status_code=404, detail="Folder not found")
 
-        profane_calls = {"agent": set(), "customer": set()}  
+        profane_calls = {"agent": set(), "customer": set()}
 
-        for filename in os.listdir(folder_path):
-            if filename.endswith(".json"):  
-                file_path = os.path.join(folder_path, filename)
+        for filename in os.listdir(FOLDER_PATH):
+            if filename.endswith(".json"):
+                file_path = os.path.join(FOLDER_PATH, filename)
 
                 with open(file_path, "r", encoding="utf-8") as file:
-                    data = json.load(file)  
+                    data = json.load(file)
 
-                call_id = filename  # Using filename as call_id
+                call_id = filename
 
                 for entry in data:
                     speaker = entry.get("speaker", "").lower()
@@ -40,64 +47,114 @@ def detect_profanity_using_regex():
                         elif speaker == "customer":
                             profane_calls["customer"].add(call_id)
 
-        return profane_calls
+        return {"agent": list(profane_calls["agent"]), "customer": list(profane_calls["customer"])}
+
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="Error accessing JSON files.")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid JSON file format.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
 
 @router.post("/detect/profanity/ml/files", response_model=dict)
 def detect_profanity_using_ml():
+    """
+    Detects profanity in conversation files using an ML model.
+
+    Returns:
+    --------
+    dict:
+        {
+            "agent": [list of call IDs with agent profanity],
+            "customer": [list of call IDs with customer profanity]
+        }
+    """
     try:
-        folder_path = "yaml-sample-folder/All_Conversations/"  # Corrected path to JSON files
-        if not os.path.exists(folder_path):
+        if not os.path.exists(FOLDER_PATH):
             raise HTTPException(status_code=404, detail="Folder not found")
 
         profane_calls = {"agent": set(), "customer": set()}
 
-        for filename in os.listdir(folder_path):
-            if filename.endswith(".json"):  # Process JSON files
-                file_path = os.path.join(folder_path, filename)
+        for filename in os.listdir(FOLDER_PATH):
+            if filename.endswith(".json"):
+                file_path = os.path.join(FOLDER_PATH, filename)
 
                 with open(file_path, "r", encoding="utf-8") as file:
-                    data = json.load(file)  # Load JSON content
-                    print(data)
-                
+                    data = json.load(file)
 
-                call_id = filename  # Using filename as call_id
+                call_id = filename
 
                 for entry in data:
                     speaker = entry.get("speaker", "").lower()
                     text = entry.get("text", "")
 
-                    if detect_profanity_ml(text)["is_profane"]:  # Call ML detection
+                    ml_result = detect_profanity_ml(text)
+                    if isinstance(ml_result, dict) and ml_result.get("is_profane"):
                         if speaker == "agent":
                             profane_calls["agent"].add(call_id)
                         elif speaker == "customer":
                             profane_calls["customer"].add(call_id)
 
-        return profane_calls
+        return {"agent": list(profane_calls["agent"]), "customer": list(profane_calls["customer"])}
+
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="Error accessing JSON files.")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid JSON file format.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
 
 @router.post("/detect/profanity/llm", response_model=ProfanityResponse)
 def detect_profanity_using_llm(request: ProfanityRequest):
+    """
+    Detects profanity in a given text using an LLM-based model.
+
+    Parameters:
+    -----------
+    request : ProfanityRequest
+        The input text to analyze.
+
+    Returns:
+    --------
+    ProfanityResponse:
+        - is_profane (bool): True if profanity is detected, False otherwise.
+        - detected_words (list): List of detected profane words (if applicable).
+    """
     try:
         is_profane = detect_profanity_llm(request.text)
-        return {"is_profane": is_profane, "detected_words": []}
+        return ProfanityResponse(is_profane=is_profane, detected_words=[])
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-@router.post("/detect/profanity/compare")
+
+@router.post("/detect/profanity/compare", response_model=dict)
 def compare_profanity_detection(request: ProfanityRequest):
-    regex_result = detect_profanity_regex(request.text)
-    ml_result = detect_profanity_ml(request.text)
-    #llm_result = detect_profanity_llm(request.text)
-    
-    return {
-        "regex": {"is_profane": bool(regex_result), "detected_words": regex_result},
-        "ml": {"is_profane": ml_result}, 
-    }
+    """
+    Compares profanity detection results from Regex and ML approaches.
 
+    Parameters:
+    -----------
+    request : ProfanityRequest
+        The input text to analyze.
 
-'''
+    Returns:
+    --------
+    dict:
+        {
+            "regex": {"is_profane": bool, "detected_words": list},
+            "ml": {"is_profane": bool, "detected_words": list}
+        }
+    """
+    try:
+        regex_result = detect_profanity_regex(request.text)
+        ml_result = detect_profanity_ml(request.text)
 
-'''
+        return {
+            "regex": {"is_profane": bool(regex_result), "detected_words": regex_result},
+            "ml": {"is_profane": ml_result.get("is_profane", False), "detected_words": ml_result.get("detected_words", [])},
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")

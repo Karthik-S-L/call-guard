@@ -13,9 +13,9 @@ Built using **FastAPI** for backend processing and **Streamlit** for UI visualiz
 
 ---
 
-## ⚙️ Tech Stack
+## Tech Stack
 
-- **Backend**: FastAPI
+- **Backend**: FastAPI, Python
 - **ML Models**: Hugging Face API
 - **Frontend**: Streamlit
 - **Database**: (Optional) SQLite/PostgreSQL
@@ -23,10 +23,10 @@ Built using **FastAPI** for backend processing and **Streamlit** for UI visualiz
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
-your_project/
+call_guard_backend/
 │── app/
 │   ├── main.py               # FastAPI app entry point
 │   ├── api/
@@ -36,19 +36,25 @@ your_project/
 │   │   │   │   ├── compliance.py       # Privacy violation detection APIs
 │   │   │   │   ├── call_quality.py     # Call quality metrics APIs
 │   ├── services/
-│   │   ├── profanity.py       # Regex & ML-based profanity detection logic
-│   │   ├── compliance_ml.py   # Privacy violation detection logic
-│   │   ├── call_quality.py    # Call silence & overtalk calculations
-│── call_quality_dashboard.py  # Streamlit dashboard for call quality
-│── requirements.txt           # Dependencies
-│── README.md                  # Project documentation
+│   │   ├── profanity_regex.py    # Regex based profanity detection logic
+|   |   ├── profanity_ml.py       # ML-based profanity detection logic
+│   │   ├── compliance_regex.py   # Privacy violation detection logic using regex
+|   |   ├── compliance_ml.py      # Privacy violation detection logic using ml
+│   │   ├── call_quality.py       # Call silence & overtalk calculations
+│── call_quality_dashboard.py     # Streamlit dashboard for call quality
+│── requirements.txt              # Dependencies
+│── call_qualiti_dashboard.py     # To display call quality using matplotlib
+│── .env-emaple.txt               # Sample env setup
+│── yaml-sample-folder            # Folder containing conversation zip file.
+│── .gitignore
+│── README.md
 ```
 
 ---
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
-### 1️⃣ Clone the Repository
+### Clone the Repository
 
 ```bash
 git clone https://github.com/yourusername/call-guard-backend.git
@@ -87,7 +93,7 @@ API will be available at: **http://127.0.0.1:8000/docs**
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### 📍 **1. Profanity Detection**
 
@@ -96,6 +102,7 @@ API will be available at: **http://127.0.0.1:8000/docs**
 
 ### 📍 **2. Privacy Violation Detection**
 
+- **Regex-based Detection:** `POST /detect/privacy-violation/regex`
 - **ML-based Detection:** `POST /detect/privacy-violation/ml`
 
 ### 📍 **3. Call Quality Metrics**
@@ -126,4 +133,4 @@ The dashboard visualizes **silence and overtalk percentages per call**.
 
 Feel free to fork the repo, submit issues, and make pull requests!
 
-📧 Contact: your.email@example.com
+📧 Contact: karthiksagar1921@gmail.com
