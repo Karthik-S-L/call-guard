@@ -33,16 +33,23 @@ def query_huggingface(text: str) -> dict:
     payload = {"inputs": text, "parameters": {"candidate_labels": SENSITIVE_INFO_LABELS + IDENTITY_VERIFICATION_LABELS}}
 
     try:
-        response = requests.post(API_URL, headers=HEADERS, json=payload, timeout=10)  # Timeout prevents hanging requests
+        response = requests.post(API_URL, headers=HEADERS, json=payload, timeout=50)  # Timeout prevents hanging requests
         
         if response.status_code != 200:
             print(f"API Error: {response.status_code} - {response.text}")
             raise HTTPException(status_code=response.status_code, detail="Hugging Face API Error")
+        print(f"Text Sent: {text}")
+        print(f"API Response: {response.json()}")
 
         return response.json()
 
+
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Hugging Face API Request Failed: {str(e)}")
+
+
+
+
 
 def detect_privacy_violations_ml(folder_path: str) -> Tuple[int, List[str]]:
     """
@@ -91,16 +98,24 @@ def detect_privacy_violations_ml(folder_path: str) -> Tuple[int, List[str]]:
                         labels = response.get("labels", [])
                         scores = response.get("scores", [])
 
-                        # Check if identity verification was mentioned
-                        for label, score in zip(labels, scores):
-                            if label in IDENTITY_VERIFICATION_LABELS and score > 0.7:  # Adjust confidence threshold if needed
-                                identity_verified = True
+                        IDENTITY_THRESHOLD = 0.8  
+                        SENSITIVE_INFO_THRESHOLD = 0.2  
+                        print(f"Response Labels: {labels}")  
+                        print(f"Response Scores: {scores}")  
 
-                        # Check if sensitive information was shared without verification
                         for label, score in zip(labels, scores):
-                            if label in SENSITIVE_INFO_LABELS and score > 0.7 and not identity_verified:
-                                violating_calls.append(call_id)
-                                break  # No need to check further in this file
+                            if label in IDENTITY_VERIFICATION_LABELS and score > IDENTITY_THRESHOLD:
+                                identity_verified = True
+                                print(f"✅ Identity verified: {text} (Score: {score:.2f})")  
+
+            
+                        for label, score in zip(labels, scores):
+                            if label in SENSITIVE_INFO_LABELS and score > SENSITIVE_INFO_THRESHOLD:
+                                if not identity_verified:  #  Violation happens ONLY if identity is NOT verified
+                                    violating_calls.append(call_id)
+                                    print(f"🚨 Violation detected in {call_id}: {text} (Label: {label}, Score: {score:.2f})")  # Debug
+                                    break  # Stop checking further for this call
+                
 
         return 200, list(set(violating_calls))  # Ensure unique call IDs
 

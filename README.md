@@ -80,7 +80,10 @@ pip install -r requirements.txt
 Create a **.env** file in the root folder:
 
 ```ini
-HF_API_KEY=your_huggingface_api_key
+API_KEY=your_huggingface_api_key
+COMPLIANCE_API_URL="https://api-inference.huggingface.co/models/facebook/bart-large-mnli"
+PROFANITY_API_URL="https://router.huggingface.co/hf-inference/models/unitary/toxic-bert"
+LLM_API_URL=""
 ```
 
 ### 5️⃣ Run the FastAPI Server
